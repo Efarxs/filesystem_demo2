@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户登录</title>
+    <link href="/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #343a40;
+            color: #ffffff;
+        }
+
+        .container {
+            margin-top: 100px;
+        }
+
+        .card {
+            background-color: #495057;
+        }
+
+        .card-header {
+            background-color: #343a40;
+            border-bottom: 1px solid #495057;
+            color: #ffffff;
+        }
+
+        .btn-dark {
+            background-color: #343a40;
+            color: #ffffff;
+        }
+
+        .btn-dark:hover {
+            background-color: #212529;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center">登录</h3>
+                </div>
+                <div class="card-body">
+                    <!-- Login form goes here -->
+                    <form>
+                        <div class="form-group">
+                            <label for="username">用户名</label>
+                            <input type="text" class="form-control" id="username" placeholder="用户名">
+                        </div>
+                        <div class="form-group">
+                            <label for="password">密码</label>
+                            <input type="password" class="form-control" id="password" placeholder="密码">
+                        </div>
+                        <button type="button" class="btn btn-dark btn-block" id="btn">登录</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/jquery-3.5.1.slim.min.js"></script>
+<script src="/bootstrap.min.js"></script>
+<script>
+    $(function(){
+        $("#btn").click(function() {
+            let username = $("#username").val();
+            let password = $("#password").val();
+
+            // 发起登录请求
+            $.ajax({
+                url: "/api/user/login",
+                data: JSON.stringify({username:username,password: password}),
+                method: "post",
+                dataType: "json",
+                contentType: 'application/json',
+            }).done(function(data) {
+                // 请求完成操作
+                console.log(data)
+                if (data.code == 200) {
+                    alert("登录成功");
+                    // 登录成功跳转到首页
+                    window.location.href = "/";
+                } else {
+                    alert("登录失败:" + data.message);
+                }
+            });
+        });
+    });
+</script>
+</body>
+
+</html>

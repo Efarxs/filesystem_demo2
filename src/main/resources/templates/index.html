@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件管理</title>
+    <link href="/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #212529;
+            color: #fff;
+        }
+
+        header {
+            background-color: #343a40;
+            padding: 10px;
+            text-align: right;
+        }
+
+        main {
+            margin: 20px auto;
+            background-color: #343a40;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+            color: #212529;
+        }
+
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #343a40;
+            color: #fff;
+        }
+
+        tr:hover {
+            background-color: #454d55;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        footer {
+            background-color: #343a40;
+            color: #fff;
+            padding: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="container">
+        <div id="user-info">
+            <span>欢迎你, <b th:utext="${user}"></b> !</span>
+            <a href="#" data-toggle="modal" data-target="#myModal" th:if="${!vip}">成为VIP</a>
+            <button class="btn btn-outline-light" onclick="logout()">退出登录</button>
+        </div>
+    </div>
+</header>
+
+<main class="container">
+    <div class="mb-3">
+        <label for="fileUpload" class="form-label">上传文件</label>
+        <input type="file" class="form-control" id="fileUpload" accept="*">
+    </div>
+
+    <table class="table table-bordered table-hover">
+        <thead>
+        <tr>
+            <th>文件序号</th>
+            <th>文件名</th>
+            <th>大小</th>
+            <th>hash值</th>
+            <th>上传时间</th>
+            <th>操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- 文件列表将通过后端动态生成 -->
+        <tr th:each="item : ${list}">
+            <td th:utext="${item.id}"></td>
+            <td th:utext="${item.name}"></td>
+            <td th:utext="${@FileUtil.formatSize(item.size)}"></td>
+            <td th:utext="${item.hash}"></td>
+            <td th:utext="${item.createTime}"></td>
+            <td class="actions">
+                <button class="btn btn-success" th:attr="onclick='download(\'' + ${item.id} + '\')'">下载</button>
+                <button class="btn btn-danger" th:attr="onclick='del(\'' + ${item.id} + '\')'">删除</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<!-- 模态框 -->
+<div class="modal" id="myModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <!-- 模态框头部 -->
+            <div class="modal-header">
+                <h5 class="modal-title" style="color: black;">成为VIP</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <!-- 模态框内容 -->
+            <div class="modal-body">
+                <!-- 文本表单 -->
+                <form>
+                    <div class="form-group">
+                        <label for="cdk" style="color: black;">输入口令：</label>
+                        <input type="text" class="form-control" id="cdk" placeholder="输入VIP口令">
+                    </div>
+                </form>
+            </div>
+            <!-- 模态框底部 -->
+            <div class="modal-footer">
+                <!-- 提交按钮 -->
+                <button type="button" class="btn btn-primary" onclick="ktvip()">开通</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+<footer>
+    &copy; 2023 文件管理系统
+</footer>
+
+<script src="/jquery-3.5.1.slim.min.js"></script>
+<script src="/bootstrap.min.js"></script>
+<script>
+
+    function ktvip() {
+        // 发起请求
+        $.ajax({
+            url: "/api/user/ktvip",
+            data: {cdk:$("#cdk").val()},
+            method: "post",
+            dataType: "json",
+        }).done(function(data) {
+            // 请求完成操作
+            console.log(data)
+            if (data.code == 200) {
+                alert("开通成功");
+                // 刷新一下
+                window.location.reload();
+            } else {
+                alert("开通失败:" + data.message);
+            }
+        });
+    }
+
+    /**
+     * 下载文件
+     * @param id
+     */
+    function download(id) {
+        if (!id) {
+            alert("文件id缺失！!");
+            return;
+        }
+        window.open("/api/file/" + id);
+    }
+
+    /**
+     * 删除文件
+     * @param id
+     */
+    function del(id) {
+        if (!id) {
+            alert("文件id缺失！!");
+            return;
+        }
+        $.ajax({
+            url: '/api/file/' + id,
+            type: 'DELETE',
+            dataType: "json",
+            success: function (res) {
+                if (res.code == 200) {
+                    // 删除成功
+                    alert("文件删除成功");
+                    window.location.href = "/";
+                    return;
+                } else {
+                    // 删除失败
+                    alert(res.message);
+                }
+            },
+            error: function (error) {
+                alert("服务器连接失败！" + error);
+            }
+        });
+    }
+
+    /**
+     * 退出登录
+     */
+    function logout() {
+        $.ajax({
+            url: '/api/user/logout',
+            type: 'GET',
+            dataType: "json",
+            success: function (res) {
+                if (res.code == 200) {
+                    window.location.href = "/login";
+                    return;
+                } else {
+                    // 失败
+                    alert(res.message);
+                }
+            },
+            error: function (error) {
+                alert("服务器连接失败！" + error);
+            }
+        });
+
+    }
+
+    $(document).ready(function () {
+        $("#fileUpload").change(function () {
+            let fileInput = this;
+            let file = fileInput.files[0];
+
+            if (file) {
+                let formData = new FormData();
+                formData.append('file', file);
+
+                $.ajax({
+                    url: '/api/file/',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    dataType: "json",
+                    success: function (res) {
+                        if (res.code == 200) {
+                            // 文件上传成功，刷新页面
+                            alert("文件上传成功");
+                            window.location.href = "/";
+                            return;
+                        } else {
+                            // 上传失败
+                            alert(res.message);
+                            window.location.reload();
+                        }
+                    },
+                    error: function (error) {
+                        alert("服务器连接失败！" + error);
+                    }
+                });
+            } else {
+                alert("请选择文件");
+            }
+        });
+    });
+</script>
+</body>
+</html>
